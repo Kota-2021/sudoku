@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
 
 //init default numbers
 var items = [9][9]int{
@@ -15,43 +18,124 @@ var items = [9][9]int{
 	[9]int{0, 4, 0, 0, 0, 0, 0, 7, 0},
 }
 
-//rowInfo is row info
-var rowInfo [9][9]int
-
-//colInfo is col info
-var colInfo [9][9]int
-
-//boxInfo is box info
-var boxInfo [9][9]int
-
 //itemInfo is item info
 var itemInfo [9][9][10]int
 
-//checkRow is searching same number in the Row
-func checkRow(ri, ci, item int) {
-	if item > 0 && item <= 9 {
-		for i := 0; i < 9; i++ {
-			itemInfo[ri][i][item] = 11
-		}
-	} else if item == 10 {
-		for _, colItem := range itemInfo[ri] {
+//set11 is seting no11
+func set11() {
+
+	for ri, rowItem := range itemInfo {
+		for ci, colItem := range rowItem {
 			if colItem[0] >= 1 && colItem[0] <= 9 {
-				itemInfo[ri][ci][colItem[0]] = 11
+				for i := 0; i < 9; i++ {
+					//myself
+					itemInfo[ri][ci][i+1] = 11
+					//row set
+					itemInfo[ri][i][colItem[0]] = 11
+					//col set
+					itemInfo[i][ci][colItem[0]] = 11
+				}
+				//box set
+				_, startRi, endRi, startCi, endCi := getBox(100, ri, ci)
+				for ri := startRi; ri <= endRi; ri++ {
+					for ci := startCi; ci <= endCi; ci++ {
+						itemInfo[ri][ci][colItem[0]] = 11
+					}
+				}
 			}
 		}
 	}
 }
 
+//checkRow is searching same number in the Row
+func checkRow(ri, ci, item int) {
+	if item >= 1 && item <= 9 {
+		for i := 0; i < 9; i++ {
+			itemInfo[ri][i][item] = 11
+		}
+	}
+	set11()
+}
+
+//checkRow2 is searching same number in the one Row
+func checkRow2() {
+	for index := 0; index < 9; index++ {
+		for number := 1; number <= 9; number++ {
+			var tmp [9]int
+			_, tmp = getOne("row", "one", index, number)
+			b, sameIndex := checkSame(tmp)
+			if b == true {
+				itemInfo[index][sameIndex][0] = number
+				set11()
+			}
+		}
+	}
+}
+
+//checkSame is searching same data
+func checkSame(items [9]int) (check bool, index int) {
+	checkData := [2]int{0, 0}
+	for i, item := range items {
+		if item == 10 {
+			checkData[0] = checkData[0] + 1
+			checkData[1] = i
+		}
+	}
+	if checkData[0] == 1 {
+		check = true
+		index = checkData[1]
+	} else {
+		check = false
+		index = 100
+	}
+	return
+}
+
+//checkSameBox is searching same data
+func checkSameBox(index, number int) (check bool, rIndex, cIndex int) {
+	checkData := [3]int{0, 0, 0}
+
+	_, startRi, endRi, startCi, endCi := getBox(index, 100, 100)
+	for ri := startRi; ri <= endRi; ri++ {
+		for ci := startCi; ci <= endCi; ci++ {
+			if itemInfo[ri][ci][number] == 10 {
+				checkData[0] = checkData[0] + 1
+				checkData[1] = ri
+				checkData[2] = ci
+			}
+		}
+	}
+	if checkData[0] == 1 {
+		check = true
+		rIndex = checkData[1]
+		cIndex = checkData[2]
+	} else {
+		check = false
+		rIndex = 100
+		cIndex = 100
+	}
+	return
+}
+
 //checkCol is searching same number in the col
 func checkCol(ri, ci, item int) {
-	if item > 0 && item <= 9 {
+	if item >= 1 && item <= 9 {
 		for i := 0; i < 9; i++ {
 			itemInfo[i][ci][item] = 11
 		}
-	} else if item == 10 {
-		for _, rowItem := range itemInfo[ci] {
-			if rowItem[0] >= 1 && rowItem[0] <= 9 {
-				itemInfo[ci][ri][rowItem[0]] = 11
+	}
+	set11()
+}
+
+//checkCol2 is searching same number in the one Col
+func checkCol2() {
+	for index := 0; index < 9; index++ {
+		for number := 1; number <= 9; number++ {
+			var tmp [9]int
+			_, tmp = getOne("col", "one", index, number)
+			b, sameIndex := checkSame(tmp)
+			if b == true {
+				itemInfo[sameIndex][index][0] = number
 			}
 		}
 	}
@@ -68,12 +152,17 @@ func checkBox(ri, ci, item int) {
 				itemInfo[rIndex][cIndex][item] = 11
 			}
 		}
-	} else if item == 10 {
-		for rIndex := startRi; rIndex <= endRi; rIndex++ {
-			for cIndex := startCi; cIndex <= endCi; cIndex++ {
-				if itemInfo[rIndex][cIndex][0] > 0 && itemInfo[rIndex][cIndex][0] <= 9 {
-					itemInfo[ri][ci][itemInfo[rIndex][cIndex][0]] = 11
-				}
+	}
+	set11()
+}
+
+//checkCol2 is searching same number in the one Col
+func checkBox2() {
+	for index := 1; index <= 9; index++ {
+		for number := 1; number <= 9; number++ {
+			b, rIndex, cIndex := checkSameBox(index, number)
+			if b == true {
+				itemInfo[rIndex][cIndex][0] = number
 			}
 		}
 	}
@@ -90,6 +179,37 @@ func getRow() [9][9][10]int {
 		}
 	}
 	return rowData
+}
+
+//getOne return row or col one data
+func getOne(typ, sel string, index, number int) (data [9][10]int, oneData [9]int) {
+
+	var tmp [9][9][10]int
+
+	switch typ {
+	case "row":
+		tmp = getRow()
+	case "col":
+		tmp = getCol()
+	default:
+	}
+
+	switch sel {
+	case "all":
+		for ci, colItem := range tmp[index] {
+			for vi, value := range colItem {
+				data[ci][vi] = value
+			}
+		}
+	case "one":
+		for ci, colItem := range tmp[index] {
+			if ci < 9 {
+				oneData[ci] = colItem[number]
+			}
+		}
+	default:
+	}
+	return
 }
 
 //getCol return coll data
@@ -181,11 +301,6 @@ func showInfo(showType string, sele int) {
 
 	case "box":
 		//box item print
-
-		for _, boxItem := range boxInfo {
-			fmt.Printf("%v\n", boxItem)
-		}
-
 		if sele == 100 {
 			for i := 1; i <= 9; i++ {
 				_, startRi, endRi, startCi, endCi := getBox(i, 100, 100)
@@ -199,6 +314,7 @@ func showInfo(showType string, sele int) {
 
 		} else if sele >= 0 && sele <= 10 {
 			for i := 1; i <= 9; i++ {
+				fmt.Printf("showInfo-box: box-index: %v ", i)
 				_, startRi, endRi, startCi, endCi := getBox(i, 100, 100)
 
 				for rIndex := startRi; rIndex <= endRi; rIndex++ {
@@ -216,9 +332,57 @@ func showInfo(showType string, sele int) {
 				fmt.Printf("rowNo: %v colNo: %v item: %v\n", ri+1, ci+1, itemInfo[ri][ci])
 			}
 		}
+	case "all-one":
+		//all item print
+		var tmp [9]int
+		for ri, _ := range itemInfo {
+			for ci := 0; ci < 9; ci++ {
+				tmp[ci] = itemInfo[ri][ci][0]
+			}
+			fmt.Println(spacePlus(tmp))
+		}
 	default:
 		fmt.Println("nothing")
 	}
+}
+
+//spacePlus is add space
+func spacePlus(items [9]int) (str string) {
+
+	for _, item := range items {
+		s := strconv.Itoa(item)
+		if item < 10 {
+			str += s + " "
+		} else {
+			str += "-" + " "
+		}
+	}
+	return
+}
+
+//check1 is first check and set
+func check1() {
+	for ri, rowItem := range itemInfo {
+		for ci, item := range rowItem {
+
+			//row check
+			checkRow(ri, ci, item[0])
+
+			//col check
+			checkCol(ri, ci, item[0])
+
+			//box check
+			checkBox(ri, ci, item[0])
+		}
+	}
+}
+
+//check2 is check and set
+func check2() {
+	checkRow2()
+	checkCol2()
+	checkBox2()
+	check1()
 }
 
 func main() {
@@ -245,38 +409,15 @@ func main() {
 		}
 	}
 
-	//show all
-	fmt.Println("show all-1:")
-	showInfo("all", 100)
-
 	//itemInfo check & set
-	for ri, rowItem := range itemInfo {
-		for ci, item := range rowItem {
+	check1()
 
-			//row check
-			checkRow(ri, ci, item[0])
-
-			//col check
-			checkCol(ri, ci, item[0])
-
-			//box check
-			checkBox(ri, ci, item[0])
-		}
+	for i := 0; i < 3; i++ {
+		//itemInfo check2 & set
+		check2()
 	}
 
 	//show all
-	fmt.Println("show all-2:")
-	showInfo("all", 100)
-
-	//show col
-	fmt.Println("showCol: ")
-	showInfo("col", 1)
-
-	//show row
-	fmt.Println("showRow: ")
-	showInfo("row", 1)
-
-	//show box
-	fmt.Println("showBox: ")
-	showInfo("box", 1)
+	fmt.Println("show all:")
+	showInfo("all-one", 100)
 }
