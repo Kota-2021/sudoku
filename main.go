@@ -67,11 +67,10 @@ var items = [9][9]int{
 }
 
 type ItemData struct {
-	items [9][9][10]int
+	items     [9][9][10]int
+	itemCount int
+	forCount  int
 }
-
-//itemInfo is item info
-var itemInfo [9][9][10]int
 
 //set11 is seting no11
 func set11(it ItemData) ItemData {
@@ -110,6 +109,8 @@ func checkRow2(it ItemData) ItemData {
 			b, sameIndex := checkSame(tmp)
 			if b == true {
 				it.items[index][sameIndex][0] = number
+				//count
+				it.itemCount += 1
 				it = set11(it)
 			}
 		}
@@ -172,7 +173,9 @@ func checkCol2(it ItemData) ItemData {
 			b, sameIndex := checkSame(tmp)
 			if b == true {
 				it.items[sameIndex][index][0] = number
-				set11(it)
+				//count
+				it.itemCount += 1
+				it = set11(it)
 			}
 		}
 	}
@@ -187,7 +190,9 @@ func checkBox2(it ItemData) ItemData {
 			b, rIndex, cIndex := checkSameBox(it, index, number)
 			if b == true {
 				it.items[rIndex][cIndex][0] = number
-				set11(it)
+				//count
+				it.itemCount += 1
+				it = set11(it)
 			}
 		}
 	}
@@ -391,45 +396,26 @@ func spacePlus(items [9]int) (str string) {
 func check2(it ItemData) ItemData {
 	it = checkRow2(it)
 	it = checkCol2(it)
-	checkBox2(it)
+	it = checkBox2(it)
 
 	return it
 }
 
-func main() {
-
+//sudoku2 start
+func Sudoku2() {
 	//items print
 	for _, item := range items {
 		fmt.Printf("%v\n", item)
 	}
 
-	//itemInfo set
-	for ri, rowItem := range items {
-		for ci, item := range rowItem {
-			if item > 0 {
-				itemInfo[ri][ci][0] = item
-				for i := 1; i <= 9; i++ {
-					itemInfo[ri][ci][i] = 11
-				}
-			} else {
-				itemInfo[ri][ci][0] = 10
-				for i := 1; i <= 9; i++ {
-					itemInfo[ri][ci][i] = 10
-				}
-			}
-		}
-	}
-	fmt.Println("====iteminfo====")
-	fmt.Println(itemInfo)
-	fmt.Println("====iteminfo====")
-
 	var it ItemData
 
-	//itemInfo set
+	//data set
 	for ri, rowItem := range items {
 		for ci, item := range rowItem {
 			if item > 0 {
 				it.items[ri][ci][0] = item
+				it.itemCount += 1
 				for i := 1; i <= 9; i++ {
 					it.items[ri][ci][i] = 11
 				}
@@ -442,19 +428,33 @@ func main() {
 		}
 	}
 
-	fmt.Println("====struct====")
-	fmt.Println(it.items)
-	fmt.Println("====struct====")
-
-	//itemInfo set
+	//items set
 	it = set11(it)
 
-	for i := 0; i < 10; i++ {
-		//itemInfo check2 & set
-		it = check2(it)
+	for i := 0; ; {
+
+		i++
+		it.forCount = i
+
+		if it.itemCount < 81 && i < 10 {
+
+			//items check2 & set
+			it = check2(it)
+		} else {
+			break
+		}
 	}
 
 	//show all
 	fmt.Println("show all:")
+	fmt.Printf("item count: %v\n", it.itemCount)
+	fmt.Printf("for count: %v\n", it.forCount)
 	showInfo(it, "all-one", 100)
+
+}
+
+func main() {
+
+	Sudoku2()
+
 }
