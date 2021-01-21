@@ -54,7 +54,7 @@ import (
 	{0, 4, 0, 0, 0, 0, 0, 7, 0},
 } */
 
-/* var items = [9][9]int{
+var items = [9][9]int{
 	{0, 0, 1, 0, 0, 7, 5, 0, 0},
 	{0, 0, 3, 4, 0, 0, 0, 0, 8},
 	{2, 0, 0, 0, 1, 0, 0, 3, 0},
@@ -64,60 +64,58 @@ import (
 	{0, 3, 0, 0, 8, 0, 0, 0, 4},
 	{4, 0, 0, 0, 0, 9, 7, 0, 0},
 	{0, 0, 7, 2, 0, 0, 1, 0, 0},
-} */
+}
+
+type ItemData struct {
+	items [9][9][10]int
+}
 
 //itemInfo is item info
 var itemInfo [9][9][10]int
 
 //set11 is seting no11
-func set11() {
+func set11(it ItemData) ItemData {
 
-	for ri, rowItem := range itemInfo {
+	for ri, rowItem := range it.items {
 		for ci, colItem := range rowItem {
 			if colItem[0] >= 1 && colItem[0] <= 9 {
 				for i := 0; i < 9; i++ {
 					//myself
-					itemInfo[ri][ci][i+1] = 11
+					it.items[ri][ci][i+1] = 11
 					//row set
-					itemInfo[ri][i][colItem[0]] = 11
+					it.items[ri][i][colItem[0]] = 11
 					//col set
-					itemInfo[i][ci][colItem[0]] = 11
+					it.items[i][ci][colItem[0]] = 11
 				}
 				//box set
 				_, startRi, endRi, startCi, endCi := getBox(100, ri, ci)
 				for ri := startRi; ri <= endRi; ri++ {
 					for ci := startCi; ci <= endCi; ci++ {
-						itemInfo[ri][ci][colItem[0]] = 11
+						it.items[ri][ci][colItem[0]] = 11
 					}
 				}
 			}
 		}
 	}
-}
 
-//checkRow is searching same number in the Row
-func checkRow(ri, ci, item int) {
-	if item >= 1 && item <= 9 {
-		for i := 0; i < 9; i++ {
-			itemInfo[ri][i][item] = 11
-			set11()
-		}
-	}
+	return it
 }
 
 //checkRow2 is searching same number in the one Row
-func checkRow2() {
+func checkRow2(it ItemData) ItemData {
 	for index := 0; index < 9; index++ {
 		for number := 1; number <= 9; number++ {
 			var tmp [9]int
-			_, tmp = getOne("row", "one", index, number)
+			_, tmp = getOne(it, "row", "one", index, number)
 			b, sameIndex := checkSame(tmp)
 			if b == true {
-				itemInfo[index][sameIndex][0] = number
-				set11()
+				it.items[index][sameIndex][0] = number
+				it = set11(it)
 			}
 		}
 	}
+
+	return it
 }
 
 //checkSame is searching same data
@@ -140,13 +138,13 @@ func checkSame(items [9]int) (check bool, index int) {
 }
 
 //checkSameBox is searching same data
-func checkSameBox(index, number int) (check bool, rIndex, cIndex int) {
+func checkSameBox(it ItemData, index, number int) (check bool, rIndex, cIndex int) {
 	checkData := [3]int{0, 0, 0}
 
 	_, startRi, endRi, startCi, endCi := getBox(index, 100, 100)
 	for ri := startRi; ri <= endRi; ri++ {
 		for ci := startCi; ci <= endCi; ci++ {
-			if itemInfo[ri][ci][number] == 10 {
+			if it.items[ri][ci][number] == 10 {
 				checkData[0] = checkData[0] + 1
 				checkData[1] = ri
 				checkData[2] = ci
@@ -165,66 +163,45 @@ func checkSameBox(index, number int) (check bool, rIndex, cIndex int) {
 	return
 }
 
-//checkCol is searching same number in the col
-func checkCol(ri, ci, item int) {
-	if item >= 1 && item <= 9 {
-		for i := 0; i < 9; i++ {
-			itemInfo[i][ci][item] = 11
-			set11()
-		}
-	}
-}
-
 //checkCol2 is searching same number in the one Col
-func checkCol2() {
+func checkCol2(it ItemData) ItemData {
 	for index := 0; index < 9; index++ {
 		for number := 1; number <= 9; number++ {
 			var tmp [9]int
-			_, tmp = getOne("col", "one", index, number)
+			_, tmp = getOne(it, "col", "one", index, number)
 			b, sameIndex := checkSame(tmp)
 			if b == true {
-				itemInfo[sameIndex][index][0] = number
-				set11()
+				it.items[sameIndex][index][0] = number
+				set11(it)
 			}
 		}
 	}
-}
 
-//checkBox is searching same number in the box
-func checkBox(ri, ci, item int) {
-
-	_, startRi, endRi, startCi, endCi := getBox(0, ri, ci)
-
-	if item >= 1 && item <= 9 {
-		for rIndex := startRi; rIndex <= endRi; rIndex++ {
-			for cIndex := startCi; cIndex <= endCi; cIndex++ {
-				itemInfo[rIndex][cIndex][item] = 11
-				set11()
-			}
-		}
-	}
+	return it
 }
 
 //checkCol2 is searching same number in the one Col
-func checkBox2() {
+func checkBox2(it ItemData) ItemData {
 	for index := 1; index <= 9; index++ {
 		for number := 1; number <= 9; number++ {
-			b, rIndex, cIndex := checkSameBox(index, number)
+			b, rIndex, cIndex := checkSameBox(it, index, number)
 			if b == true {
-				itemInfo[rIndex][cIndex][0] = number
-				set11()
+				it.items[rIndex][cIndex][0] = number
+				set11(it)
 			}
 		}
 	}
+
+	return it
 }
 
 //getRow return row data
-func getRow() [9][9][10]int {
-	var rowData [9][9][10]int
-	for ri, rowItem := range itemInfo {
+func getRow(it ItemData) ItemData {
+	var rowData ItemData
+	for ri, rowItem := range it.items {
 		for ci, item := range rowItem {
 			for di, d := range item {
-				rowData[ri][ci][di] = d
+				rowData.items[ri][ci][di] = d
 			}
 		}
 	}
@@ -232,27 +209,27 @@ func getRow() [9][9][10]int {
 }
 
 //getOne return row or col one data
-func getOne(typ, sel string, index, number int) (data [9][10]int, oneData [9]int) {
+func getOne(it ItemData, typ, sel string, index, number int) (data [9][10]int, oneData [9]int) {
 
-	var tmp [9][9][10]int
+	var tmp ItemData
 
 	switch typ {
 	case "row":
-		tmp = getRow()
+		tmp = getRow(it)
 	case "col":
-		tmp = getCol()
+		tmp = getCol(it)
 	default:
 	}
 
 	switch sel {
 	case "all":
-		for ci, colItem := range tmp[index] {
+		for ci, colItem := range tmp.items[index] {
 			for vi, value := range colItem {
 				data[ci][vi] = value
 			}
 		}
 	case "one":
-		for ci, colItem := range tmp[index] {
+		for ci, colItem := range tmp.items[index] {
 			if ci < 9 {
 				oneData[ci] = colItem[number]
 			}
@@ -263,12 +240,12 @@ func getOne(typ, sel string, index, number int) (data [9][10]int, oneData [9]int
 }
 
 //getCol return coll data
-func getCol() [9][9][10]int {
-	var colData [9][9][10]int
-	for ri, rowItem := range itemInfo {
+func getCol(it ItemData) ItemData {
+	var colData ItemData
+	for ri, rowItem := range it.items {
 		for ci, item := range rowItem {
 			for di, d := range item {
-				colData[ci][ri][di] = d
+				colData.items[ci][ri][di] = d
 			}
 		}
 	}
@@ -314,36 +291,36 @@ func getBox(in, ri, ci int) (index, startRi, endRi, startCi, endCi int) {
 }
 
 //showInfo show Info. type is 'row or col or box or all'
-func showInfo(showType string, sele int) {
+func showInfo(it ItemData, showType string, sele int) {
 	switch showType {
 	case "row":
 		//row item print
-		tmp := getRow()
-		for ri, _ := range tmp {
+		tmp := getRow(it)
+		for ri, _ := range tmp.items {
 			if sele == 100 {
 				for ci := 0; ci < 9; ci++ {
-					fmt.Printf("colNo: %v rowNo: %v item: %v\n", ri+1, ci+1, tmp[ri][ci])
+					fmt.Printf("colNo: %v rowNo: %v item: %v\n", ri+1, ci+1, tmp.items[ri][ci])
 				}
 			} else if sele >= 0 && sele <= 10 {
 				var tmpRow [9]int
 				for ci := 0; ci < 9; ci++ {
-					tmpRow[ci] = tmp[ri][ci][sele]
+					tmpRow[ci] = tmp.items[ri][ci][sele]
 				}
 				fmt.Printf("rowNo: %v item: %v\n", ri+1, tmpRow)
 			}
 		}
 	case "col":
 		//col item print
-		tmp := getCol()
-		for ci, _ := range tmp {
+		tmp := getCol(it)
+		for ci, _ := range tmp.items {
 			if sele == 100 {
 				for ri := 0; ri < 9; ri++ {
-					fmt.Printf("colNo: %v rowNo: %v item: %v\n", ci+1, ri+1, tmp[ci][ri])
+					fmt.Printf("colNo: %v rowNo: %v item: %v\n", ci+1, ri+1, tmp.items[ci][ri])
 				}
 			} else if sele >= 0 && sele <= 10 {
 				var tmpCol [9]int
 				for ri := 0; ri < 9; ri++ {
-					tmpCol[ri] = tmp[ci][ri][sele]
+					tmpCol[ri] = tmp.items[ci][ri][sele]
 				}
 				fmt.Printf("colNo: %v item: %v\n", ci+1, tmpCol)
 			}
@@ -357,7 +334,7 @@ func showInfo(showType string, sele int) {
 
 				for rIndex := startRi; rIndex <= endRi; rIndex++ {
 					for cIndex := startCi; cIndex <= endCi; cIndex++ {
-						fmt.Printf("showBox: index:%v value:%v \n", i, itemInfo[rIndex][cIndex])
+						fmt.Printf("showBox: index:%v value:%v \n", i, it.items[rIndex][cIndex])
 					}
 				}
 			}
@@ -369,7 +346,7 @@ func showInfo(showType string, sele int) {
 
 				for rIndex := startRi; rIndex <= endRi; rIndex++ {
 					for cIndex := startCi; cIndex <= endCi; cIndex++ {
-						fmt.Printf("showBox: index:%v namber:%v value:%v \n", i, sele, itemInfo[rIndex][cIndex][sele])
+						fmt.Printf("showBox: index:%v namber:%v value:%v \n", i, sele, it.items[rIndex][cIndex][sele])
 					}
 				}
 			}
@@ -377,17 +354,17 @@ func showInfo(showType string, sele int) {
 		}
 	case "all":
 		//all item print
-		for ri, _ := range itemInfo {
+		for ri, _ := range it.items {
 			for ci := 0; ci < 9; ci++ {
-				fmt.Printf("rowNo: %v colNo: %v item: %v\n", ri+1, ci+1, itemInfo[ri][ci])
+				fmt.Printf("rowNo: %v colNo: %v item: %v\n", ri+1, ci+1, it.items[ri][ci])
 			}
 		}
 	case "all-one":
 		//all item print
 		var tmp [9]int
-		for ri, _ := range itemInfo {
+		for ri, _ := range it.items {
 			for ci := 0; ci < 9; ci++ {
-				tmp[ci] = itemInfo[ri][ci][0]
+				tmp[ci] = it.items[ri][ci][0]
 			}
 			fmt.Println(spacePlus(tmp))
 		}
@@ -410,29 +387,13 @@ func spacePlus(items [9]int) (str string) {
 	return
 }
 
-//check1 is first check and set
-func check1() {
-	for ri, rowItem := range itemInfo {
-		for ci, item := range rowItem {
-
-			//row check
-			checkRow(ri, ci, item[0])
-
-			//col check
-			checkCol(ri, ci, item[0])
-
-			//box check
-			checkBox(ri, ci, item[0])
-		}
-	}
-}
-
 //check2 is check and set
-func check2() {
-	checkRow2()
-	checkCol2()
-	checkBox2()
-	check1()
+func check2(it ItemData) ItemData {
+	it = checkRow2(it)
+	it = checkCol2(it)
+	checkBox2(it)
+
+	return it
 }
 
 func main() {
@@ -458,16 +419,42 @@ func main() {
 			}
 		}
 	}
+	fmt.Println("====iteminfo====")
+	fmt.Println(itemInfo)
+	fmt.Println("====iteminfo====")
 
-	//itemInfo check & set
-	check1()
+	var it ItemData
 
-	for i := 0; i < 7; i++ {
+	//itemInfo set
+	for ri, rowItem := range items {
+		for ci, item := range rowItem {
+			if item > 0 {
+				it.items[ri][ci][0] = item
+				for i := 1; i <= 9; i++ {
+					it.items[ri][ci][i] = 11
+				}
+			} else {
+				it.items[ri][ci][0] = 10
+				for i := 1; i <= 9; i++ {
+					it.items[ri][ci][i] = 10
+				}
+			}
+		}
+	}
+
+	fmt.Println("====struct====")
+	fmt.Println(it.items)
+	fmt.Println("====struct====")
+
+	//itemInfo set
+	it = set11(it)
+
+	for i := 0; i < 10; i++ {
 		//itemInfo check2 & set
-		check2()
+		it = check2(it)
 	}
 
 	//show all
 	fmt.Println("show all:")
-	showInfo("all-one", 100)
+	showInfo(it, "all-one", 100)
 }
